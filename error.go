@@ -3,7 +3,7 @@ package hltv
 import "fmt"
 
 type HTTPError struct {
-	Code int
+	Code        int
 	Description string
 }
 
