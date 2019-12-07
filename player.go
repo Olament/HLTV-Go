@@ -2,14 +2,16 @@ package hltv
 
 import (
 	"github.com/PuerkitoBio/goquery"
+	"github.com/tidwall/gjson"
 	"hltv/model"
 	"hltv/utils"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
-func (h *HLTV) GetPlayers(id int) (player *model.FullPlayer, err error) {
+func (h *HLTV) GetPlayer(id int) (player *model.FullPlayer, err error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", h.Url+"/player/"+strconv.Itoa(id)+"/-", nil)
 	if err != nil {
@@ -122,4 +124,36 @@ func getMapStat(doc *goquery.Document) (stats []string) {
 			stats = append(stats, selection.Text())
 		})
 	return stats
+}
+
+func (h *HLTV) GetPlayerByName(name string) (player *model.FullPlayer, err error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", h.Url+"/search?term="+name, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36")
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return nil, &HTTPError{
+			Code:        res.StatusCode,
+			Description: http.StatusText(res.StatusCode),
+		}
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	query := string(body)
+	query = query[1 : len(query)-1] // stupid and ugly workaround, need fix
+	id := gjson.Get(query, "players.0.id")
+
+	return h.GetPlayer(int(id.Int()))
 }
