@@ -3,9 +3,12 @@ package hltv
 import (
 	"github.com/PuerkitoBio/goquery"
 	"hltv/model"
+	"hltv/utils"
 	"net/http"
 	"strconv"
+	"strings"
 )
+
 type HLTV struct {
 	Url       string
 	StaticURL string
@@ -13,7 +16,7 @@ type HLTV struct {
 
 func (h *HLTV) GetPlayers(id int) (player *model.FullPlayer, err error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", h.Url + "/player/" + strconv.Itoa(id) + "/-", nil)
+	req, err := http.NewRequest("GET", h.Url+"/player/"+strconv.Itoa(id)+"/-", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -37,25 +40,51 @@ func (h *HLTV) GetPlayers(id int) (player *model.FullPlayer, err error) {
 		return nil, err
 	}
 
-	name := doc.Find(".playerRealname").Text()
+	/* basic information */
+	name := doc.Find(".playerRealname").Text() // player's real name
+	ign := doc.Find(".playerNickname").Text()  // player's in-game name
+	image, _ := doc.Find(".bodyshot-img").Attr("src")
+	age, _ := strconv.Atoi(strings.Split(doc.Find(".playerAge .listRight").Text(), " ")[0])
+
+	/* social media */
+	twitter, _ := doc.Find(".twitter").Parent().Attr("href")
+	twitch, _ := doc.Find(".twitch").Parent().Attr("href")
+	facebook, _ := doc.Find(".facebook").Parent().Attr("href")
+
+	country, _ := doc.Find(".playerRealname .flag").Attr("alt")
+	code := strings.Split(utils.PopSlashSource(doc.Find(".playerRealname .flag")), ".")[0]
+
+	teamname := doc.Find(".playerTeam a").Text()
+	teamhref, _ := doc.Find(".playerTeam a").Attr("href")
+	var teamid int
+	if len(teamhref) > 0 {
+		teamhref = strings.Split(teamhref, "/")[2]
+		teamid, _ = strconv.Atoi(teamhref)
+	}
+
+	/* achievement */
+	//var achievements []model.Achievement
+	//place := doc.Find(".achievement-table .team")
+
 
 	return &model.FullPlayer{
-		ID:           0,
-		Name:         &name,
-		Ign:          "",
-		Image:        nil,
-		Age:          nil,
-		Country:      model.Country{
-			Name: "",
-			Code: "",
+		ID:    id,
+		Name:  &name,
+		Ign:   ign,
+		Image: &image,
+		Age:   &age,
+		Country: model.Country{
+			Name: country,
+			Code: code,
 		},
-		Team:         model.Team{
-			Name: "",
-			ID:   nil,
+		Team: model.Team{
+			Name: teamname,
+			ID:   &teamid,
 		},
-		Twitter:      nil,
-		Facebook:     nil,
-		Statistics:   model.Statistics{
+		Twitter:  &twitter,
+		Twitch: &twitch,
+		Facebook: &facebook,
+		Statistics: model.Statistics{
 			Rating:            0,
 			KillsPerRound:     0,
 			MapsPlayed:        0,
@@ -66,3 +95,7 @@ func (h *HLTV) GetPlayers(id int) (player *model.FullPlayer, err error) {
 		Achievements: nil,
 	}, nil
 }
+
+//func getMapStat(doc *goquery.Document, index int) {
+//	return doc.Find(".tab-content .two-col").Find(".cell").Get(index)
+//}
