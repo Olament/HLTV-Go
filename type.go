@@ -41,7 +41,7 @@ func (h *HLTV) GetPlayers(id int) (player *model.FullPlayer, err error) {
 	}
 
 	/* basic information */
-	name := doc.Find(".playerRealname").Text() // player's real name
+	name := strings.Trim(doc.Find(".playerRealname").Text(), " ") // player's real name
 	ign := doc.Find(".playerNickname").Text()  // player's in-game name
 	image, _ := doc.Find(".bodyshot-img").Attr("src")
 	age, _ := strconv.Atoi(strings.Split(doc.Find(".playerAge .listRight").Text(), " ")[0])
@@ -54,13 +54,22 @@ func (h *HLTV) GetPlayers(id int) (player *model.FullPlayer, err error) {
 	country, _ := doc.Find(".playerRealname .flag").Attr("alt")
 	code := strings.Split(utils.PopSlashSource(doc.Find(".playerRealname .flag")), ".")[0]
 
-	teamname := doc.Find(".playerTeam a").Text()
+	teamname := strings.Trim(doc.Find(".playerTeam a").Text(), " ")
 	teamhref, _ := doc.Find(".playerTeam a").Attr("href")
 	var teamid int
 	if len(teamhref) > 0 {
 		teamhref = strings.Split(teamhref, "/")[2]
 		teamid, _ = strconv.Atoi(teamhref)
 	}
+
+	/* Player statistics */
+	stats := getMapStat(doc)
+	rating, _ := strconv.ParseFloat(stats[0], 32)
+	killsPerRound, _ := strconv.ParseFloat(stats[1], 32)
+	headshots, _ := strconv.ParseFloat(strings.ReplaceAll(stats[2], "%", ""), 32)
+	mapsPlayed, _ := strconv.Atoi(strings.ReplaceAll(stats[3], "%", ""))
+	deathPerRound, _ := strconv.ParseFloat(stats[4], 32)
+	roundsContributed, _ := strconv.ParseFloat(strings.ReplaceAll(stats[5], "%", ""), 32)
 
 	/* achievement */
 	//var achievements []model.Achievement
@@ -85,17 +94,21 @@ func (h *HLTV) GetPlayers(id int) (player *model.FullPlayer, err error) {
 		Twitch: &twitch,
 		Facebook: &facebook,
 		Statistics: model.Statistics{
-			Rating:            0,
-			KillsPerRound:     0,
-			MapsPlayed:        0,
-			DeathsPerRound:    0,
-			Headshots:         0,
-			RoundsContributed: 0,
+			Rating:            float32(rating),
+			KillsPerRound:     float32(killsPerRound),
+			MapsPlayed:        mapsPlayed,
+			DeathsPerRound:    float32(deathPerRound),
+			Headshots:         float32(headshots),
+			RoundsContributed: float32(roundsContributed),
 		},
 		Achievements: nil,
 	}, nil
 }
 
-//func getMapStat(doc *goquery.Document, index int) {
-//	return doc.Find(".tab-content .two-col").Find(".cell").Get(index)
-//}
+func getMapStat(doc *goquery.Document) (stats []string) {
+	doc.Find(".tab-content .two-col").Find(".cell").Find(".statsVal").Each(
+		func(i int, selection *goquery.Selection) {
+			stats = append(stats, selection.Text())
+	})
+	return stats
+}
