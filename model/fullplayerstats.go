@@ -19,11 +19,11 @@ type Statistics struct {
 }
 
 type FullPlayerStats struct {
-	name       *string
-	ign        *string
-	image      *string
-	age        *string
-	country    *string
-	team       *Team
-	statistics Statistics
+	Name       *string
+	Ign        *string
+	Image      *string
+	Age        *string
+	Country    *string
+	Team       *Team
+	Statistics Statistics
 }

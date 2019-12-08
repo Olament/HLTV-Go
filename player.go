@@ -2,35 +2,19 @@ package hltv
 
 import (
 	"github.com/PuerkitoBio/goquery"
+	"github.com/google/go-querystring/query"
 	"github.com/tidwall/gjson"
+	"hltv/enum"
 	"hltv/model"
 	"hltv/utils"
 	"io/ioutil"
-	"net/http"
 	"strconv"
 	"strings"
 )
 
 func (h *HLTV) GetPlayer(id int) (player *model.FullPlayer, err error) {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", h.Url+"/player/"+strconv.Itoa(id)+"/-", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36")
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
+	res, _ := utils.GetQuery(h.Url+"/player/"+strconv.Itoa(id)+"/-")
 	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, &HTTPError{
-			Code:        res.StatusCode,
-			Description: http.StatusText(res.StatusCode),
-		}
-	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
@@ -64,7 +48,7 @@ func (h *HLTV) GetPlayer(id int) (player *model.FullPlayer, err error) {
 	rating, _ := strconv.ParseFloat(stats[0], 32)
 	killsPerRound, _ := strconv.ParseFloat(stats[1], 32)
 	headshots, _ := strconv.ParseFloat(strings.ReplaceAll(stats[2], "%", ""), 32)
-	mapsPlayed, _ := strconv.Atoi(strings.ReplaceAll(stats[3], "%", ""))
+	mapsPlayed, _ := strconv.Atoi(stats[3])
 	deathPerRound, _ := strconv.ParseFloat(stats[4], 32)
 	roundsContributed, _ := strconv.ParseFloat(strings.ReplaceAll(stats[5], "%", ""), 32)
 
@@ -127,25 +111,8 @@ func getMapStat(doc *goquery.Document) (stats []string) {
 }
 
 func (h *HLTV) GetPlayerByName(name string) (player *model.FullPlayer, err error) {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", h.Url+"/search?term="+name, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36")
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
+	res, _ := utils.GetQuery(h.Url+"/search?term="+name)
 	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, &HTTPError{
-			Code:        res.StatusCode,
-			Description: http.StatusText(res.StatusCode),
-		}
-	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -156,4 +123,47 @@ func (h *HLTV) GetPlayerByName(name string) (player *model.FullPlayer, err error
 	id := gjson.Get(query, "players.0.id")
 
 	return h.GetPlayer(int(id.Int()))
+}
+
+type PlayerStatsQuery struct {
+	StartDate string //YYYY-MM-DD
+	EndDate string
+	MatchType enum.MatchType
+	RankFilter enum.RankingFilter
+}
+
+func (h *HLTV) GetPlayerStats(id int, q PlayerStatsQuery) (stats *model.FullPlayerStats, err error) {
+	queryString, _ := query.Values(q)
+
+	res, _ := utils.GetQuery(h.Url+"/stats/players/"+strconv.Itoa(id)+"/-?" + queryString.Encode())
+	defer res.Body.Close()
+
+	/* basic info */
+
+
+	return &model.FullPlayerStats{
+		Name:       nil,
+		Ign:        nil,
+		Image:      nil,
+		Age:        nil,
+		Country:    nil,
+		Team:       nil,
+		Statistics: model.Statistics{
+			Kills:                   0,
+			Headshots:               0,
+			Death:                   0,
+			KDRatio:                 0,
+			DamgePerRound:           0,
+			GrenadeDamge:            0,
+			MapsPlayed:              0,
+			RoundsPlayed:            0,
+			KillsPerRound:           0,
+			AssistsPerRound:         0,
+			DeathsPerRound:          0,
+			SavedByTeammatePerRound: 0,
+			SavedTeammatesPerRound:  0,
+			Rating:                  0,
+			RoundsContributed:       0,
+		},
+	}, nil
 }
