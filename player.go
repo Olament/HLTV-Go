@@ -14,7 +14,7 @@ import (
 )
 
 func (h *HLTV) GetPlayer(id int) (player *model.FullPlayer, err error) {
-	res, err := utils.GetQuery(h.Url+"/player/"+strconv.Itoa(id)+"/-")
+	res, err := utils.GetQuery(h.Url + "/player/" + strconv.Itoa(id) + "/-")
 	if err != nil {
 		return nil, err
 	}
@@ -84,8 +84,10 @@ func (h *HLTV) GetPlayer(id int) (player *model.FullPlayer, err error) {
 	})
 
 	return &model.FullPlayer{
-		ID:    id,
-		Name:  &name,
+		Player: model.Player{
+			Name: name,
+			ID:   &id,
+		},
 		Ign:   ign,
 		Image: &image,
 		Age:   &age,
@@ -122,7 +124,7 @@ func getMapStat(doc *goquery.Document) (stats []string) {
 }
 
 func (h *HLTV) GetPlayerByName(name string) (player *model.FullPlayer, err error) {
-	res, err := utils.GetQuery(h.Url+"/search?term="+name)
+	res, err := utils.GetQuery(h.Url + "/search?term=" + name)
 	if err != nil {
 		return nil, err
 	}
@@ -147,16 +149,16 @@ func (h *HLTV) GetPlayerByName(name string) (player *model.FullPlayer, err error
 }
 
 type PlayerStatsQuery struct {
-	StartDate string //YYYY-MM-DD
-	EndDate string
-	MatchType enum.MatchType
+	StartDate  string //YYYY-MM-DD
+	EndDate    string
+	MatchType  enum.MatchType
 	RankFilter enum.RankingFilter
 }
 
-func (h *HLTV) GetPlayerStats(id int, q PlayerStatsQuery) (stats *model.FullPlayerStats, err error) {
+func (h *HLTV) GetPlayerStats(id int, q PlayerStatsQuery) (playerStats *model.FullPlayerStats, err error) {
 	queryString, _ := query.Values(q)
 
-	res, err := utils.GetQuery(h.Url+"/stats/players/"+strconv.Itoa(id)+"/-?" + queryString.Encode())
+	res, err := utils.GetQuery(h.Url + "/stats/players/" + strconv.Itoa(id) + "/-?" + queryString.Encode())
 	if err != nil {
 		return nil, err
 	}
@@ -169,32 +171,125 @@ func (h *HLTV) GetPlayerStats(id int, q PlayerStatsQuery) (stats *model.FullPlay
 		}
 	}
 
-	/* basic info */
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return nil, err
+	}
 
+	/* basic info */
+	name := doc.Find(".summaryRealname div").Text()
+	ign := doc.Find(".context-item-name").Text() // in-game name
+	image, _ := doc.Find(".context-item-image").Attr("src")
+	age, _ := strconv.Atoi(strings.Split(doc.Find(".summaryPlayerAge").Text(), " ")[0])
+
+	countryName, _ := doc.Find(".summaryRealname .flag").Attr("title")
+	countryCode := strings.Split(utils.PopSlashSource(doc.Find(".summaryRealname .flag")), ".")[0]
+
+	team := doc.Find(".SummaryTeamname").Text()
+	teamIDS, _ := doc.Find(".SummaryTeamname").Find("a").Attr("href")
+	teamid, _ := strconv.Atoi(strings.Split(teamIDS, "/")[3])
+
+	/* stat */
+	var roundsContributed float64 //this is special, treat differently
+	doc.Find(".summaryStatBreakdown .summaryStatBreakdownDataValue").Each(func(i int, selection *goquery.Selection) {
+		if i == 2 {
+			roundsContributed, _ = strconv.ParseFloat(strings.ReplaceAll(selection.Text(), "%", ""), 32)
+		}
+	})
+
+	stats := make([]string, 0)
+	doc.Find(".stats-row").Find("span").Each(func(i int, selection *goquery.Selection) {
+		if i % 2 != 0 {
+			stats = append(stats, selection.Text())
+		}
+	})
+
+	kills, _ := strconv.Atoi(stats[0])
+	headshots, _:= strconv.ParseFloat(strings.ReplaceAll(stats[1], "%", ""), 32)
+	death, _ := strconv.Atoi(stats[2])
+	kdRatio, _ := strconv.ParseFloat(stats[3], 32)
+	damgePerRound, _ := strconv.ParseFloat(stats[4], 32)
+	grenadeDamge, _ := strconv.ParseFloat(stats[5], 32)
+	mapsPlayed, _ := strconv.Atoi(stats[6])
+	roundsPlayed, _ := strconv.Atoi(stats[7])
+	killsPerRound, _ := strconv.ParseFloat(stats[8], 32)
+	assistsPerRound, _ := strconv.ParseFloat(stats[9], 32)
+	deathsPerRound, _ := strconv.ParseFloat(stats[10], 32)
+	savedByTeammatePerRound, _ := strconv.ParseFloat(stats[11], 32)
+	savedTeammatesPerRound, _ := strconv.ParseFloat(stats[12], 32)
+	rating, _ := strconv.ParseFloat(stats[13], 32)
 
 	return &model.FullPlayerStats{
-		Name:       nil,
-		Ign:        nil,
-		Image:      nil,
-		Age:        nil,
-		Country:    nil,
-		Team:       nil,
+		Player: model.Player{
+			Name: name,
+			ID:   &id,
+		},
+		Ign:     &ign,
+		Image:   &image,
+		Age:     &age,
+		Country: &model.Country{
+			Name: countryName,
+			Code: countryCode,
+		},
+		Team:    &model.Team{
+			Name: team,
+			ID:   &teamid,
+		},
 		Statistics: model.Statistics{
-			Kills:                   0,
-			Headshots:               0,
-			Death:                   0,
-			KDRatio:                 0,
-			DamgePerRound:           0,
-			GrenadeDamge:            0,
-			MapsPlayed:              0,
-			RoundsPlayed:            0,
-			KillsPerRound:           0,
-			AssistsPerRound:         0,
-			DeathsPerRound:          0,
-			SavedByTeammatePerRound: 0,
-			SavedTeammatesPerRound:  0,
-			Rating:                  0,
-			RoundsContributed:       0,
+			Kills:                   kills,
+			Headshots:               float32(headshots),
+			Death:                   death,
+			KDRatio:                 float32(kdRatio),
+			DamgePerRound:           float32(damgePerRound),
+			GrenadeDamge:            float32(grenadeDamge),
+			MapsPlayed:              mapsPlayed,
+			RoundsPlayed:            roundsPlayed,
+			KillsPerRound:           float32(killsPerRound),
+			AssistsPerRound:         float32(assistsPerRound),
+			DeathsPerRound:          float32(deathsPerRound),
+			SavedByTeammatePerRound: float32(savedByTeammatePerRound),
+			SavedTeammatesPerRound:  float32(savedTeammatesPerRound),
+			Rating:                  float32(rating),
+			RoundsContributed:       float32(roundsContributed),
 		},
 	}, nil
+}
+
+func (h *HLTV) GetPlayerRanking(q PlayerStatsQuery) (players []model.PlayerRanking, err error) {
+	queryString, _ := query.Values(q)
+
+	res, err := utils.GetQuery(h.Url + "/stats/players?" + queryString.Encode())
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return nil, &utils.HTTPError{
+			Code:        res.StatusCode,
+			Description: http.StatusText(res.StatusCode),
+		}
+	}
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	doc.Find(".player-ratings-table tbody tr").Each(func(i int, selection *goquery.Selection) {
+		idS, _ := selection.Find(".playerCol a").First().Attr("href")
+		id, _ := strconv.Atoi(strings.Split(idS, "/")[3])
+		name := selection.Find(".playerCol").Text()
+		rating, _ := strconv.ParseFloat(selection.Find(".ratingCol").Text(), 32)
+
+		players = append(players, model.PlayerRanking{
+			Player: model.Player{
+				Name: name,
+				ID:   &id,
+			},
+			Rating: float32(rating),
+		})
+	})
+
+	return players, nil
 }
