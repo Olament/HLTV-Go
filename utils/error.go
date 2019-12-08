@@ -1,4 +1,4 @@
-package hltv
+package utils
 
 import "fmt"
 
