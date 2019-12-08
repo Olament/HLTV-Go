@@ -8,13 +8,24 @@ import (
 	"hltv/model"
 	"hltv/utils"
 	"io/ioutil"
+	"net/http"
 	"strconv"
 	"strings"
 )
 
 func (h *HLTV) GetPlayer(id int) (player *model.FullPlayer, err error) {
-	res, _ := utils.GetQuery(h.Url+"/player/"+strconv.Itoa(id)+"/-")
+	res, err := utils.GetQuery(h.Url+"/player/"+strconv.Itoa(id)+"/-")
+	if err != nil {
+		return nil, err
+	}
+
 	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return nil, &utils.HTTPError{
+			Code:        res.StatusCode,
+			Description: http.StatusText(res.StatusCode),
+		}
+	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
@@ -111,8 +122,18 @@ func getMapStat(doc *goquery.Document) (stats []string) {
 }
 
 func (h *HLTV) GetPlayerByName(name string) (player *model.FullPlayer, err error) {
-	res, _ := utils.GetQuery(h.Url+"/search?term="+name)
+	res, err := utils.GetQuery(h.Url+"/search?term="+name)
+	if err != nil {
+		return nil, err
+	}
+
 	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return nil, &utils.HTTPError{
+			Code:        res.StatusCode,
+			Description: http.StatusText(res.StatusCode),
+		}
+	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -135,8 +156,18 @@ type PlayerStatsQuery struct {
 func (h *HLTV) GetPlayerStats(id int, q PlayerStatsQuery) (stats *model.FullPlayerStats, err error) {
 	queryString, _ := query.Values(q)
 
-	res, _ := utils.GetQuery(h.Url+"/stats/players/"+strconv.Itoa(id)+"/-?" + queryString.Encode())
+	res, err := utils.GetQuery(h.Url+"/stats/players/"+strconv.Itoa(id)+"/-?" + queryString.Encode())
+	if err != nil {
+		return nil, err
+	}
+
 	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return nil, &utils.HTTPError{
+			Code:        res.StatusCode,
+			Description: http.StatusText(res.StatusCode),
+		}
+	}
 
 	/* basic info */
 
