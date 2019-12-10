@@ -15,16 +15,9 @@ import (
 
 func (h *HLTV) GetPlayer(id int) (player *model.FullPlayer, err error) {
 	res, err := utils.GetQuery(h.Url + "/player/" + strconv.Itoa(id) + "/-")
+	defer res.Body.Close()
 	if err != nil {
 		return nil, err
-	}
-
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, &utils.HTTPError{
-			Code:        res.StatusCode,
-			Description: http.StatusText(res.StatusCode),
-		}
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -125,16 +118,9 @@ func getMapStat(doc *goquery.Document) (stats []string) {
 
 func (h *HLTV) GetPlayerByName(name string) (player *model.FullPlayer, err error) {
 	res, err := utils.GetQuery(h.Url + "/search?term=" + name)
+	defer res.Body.Close()
 	if err != nil {
 		return nil, err
-	}
-
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, &utils.HTTPError{
-			Code:        res.StatusCode,
-			Description: http.StatusText(res.StatusCode),
-		}
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -159,16 +145,9 @@ func (h *HLTV) GetPlayerStats(id int, q PlayerStatsQuery) (playerStats *model.Fu
 	queryString, _ := query.Values(q)
 
 	res, err := utils.GetQuery(h.Url + "/stats/players/" + strconv.Itoa(id) + "/-?" + queryString.Encode())
+	defer res.Body.Close()
 	if err != nil {
 		return nil, err
-	}
-
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, &utils.HTTPError{
-			Code:        res.StatusCode,
-			Description: http.StatusText(res.StatusCode),
-		}
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -199,13 +178,13 @@ func (h *HLTV) GetPlayerStats(id int, q PlayerStatsQuery) (playerStats *model.Fu
 
 	stats := make([]string, 0)
 	doc.Find(".stats-row").Find("span").Each(func(i int, selection *goquery.Selection) {
-		if i % 2 != 0 {
+		if i%2 != 0 {
 			stats = append(stats, selection.Text())
 		}
 	})
 
 	kills, _ := strconv.Atoi(stats[0])
-	headshots, _:= strconv.ParseFloat(strings.ReplaceAll(stats[1], "%", ""), 32)
+	headshots, _ := strconv.ParseFloat(strings.ReplaceAll(stats[1], "%", ""), 32)
 	death, _ := strconv.Atoi(stats[2])
 	kdRatio, _ := strconv.ParseFloat(stats[3], 32)
 	damgePerRound, _ := strconv.ParseFloat(stats[4], 32)
@@ -224,14 +203,14 @@ func (h *HLTV) GetPlayerStats(id int, q PlayerStatsQuery) (playerStats *model.Fu
 			Name: name,
 			ID:   &id,
 		},
-		Ign:     &ign,
-		Image:   &image,
-		Age:     &age,
+		Ign:   &ign,
+		Image: &image,
+		Age:   &age,
 		Country: &model.Country{
 			Name: countryName,
 			Code: countryCode,
 		},
-		Team:    &model.Team{
+		Team: &model.Team{
 			Name: team,
 			ID:   &teamid,
 		},
