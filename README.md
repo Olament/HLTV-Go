@@ -5,6 +5,9 @@
   <br>
 </h1>
 
+## Installation
+	$ go get github.com/Olament/HLTV-Go
+    
 ## Getting Started
 ```Golang
 func main() {
