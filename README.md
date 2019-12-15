@@ -18,8 +18,10 @@ func main() {
 	fmt.Println(string(res))
 }
 ```
+
 <details><summary>Output</summary>
 <p>
+	
 ```json
 {
     "ID": 5100,
