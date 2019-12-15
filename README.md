@@ -270,6 +270,9 @@ func main() {
 ## API
 
 #### GetPlayer(id int) (player *model.FullPlayer, err error)
+```golang
+h.GetPlayer(7798)
+```
 
 <details><summary>Example Output</summary>
 <p>
@@ -578,14 +581,18 @@ func main() {
 
 #### GetPlayerByName(name string) (player *model.FullPlayer, err error)
 
+```golang
+h.GetPlayerByName("s1mple")
+```
+
 #### GetPlayerStats(id int, q PlayerStatsQuery) (playerStats *model.FullPlayerStats, err error)
 ```golang
-stats, _ := h.GetPlayerStats(7998, hltv.PlayerStatsQuery{
+h.GetPlayerStats(7998, hltv.PlayerStatsQuery{
 		StartDate:  "2019-01-01", //YYYY-MM-DD
 		EndDate:    "2019-12-31",
 		MatchType:  enum.MatchTypeLAN,
 		RankFilter: enum.RankingFilterTop20,
-	})
+})
 ```
 <details><summary>Output</summary>
 <p>	
