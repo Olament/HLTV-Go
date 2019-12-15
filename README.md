@@ -591,6 +591,13 @@ h.GetPlayer(7798)
 //GetPlayerByName(name string) (player *model.FullPlayer, err error)
 h.GetPlayerByName("s1mple")
 ```
+<details><summary>Output</summary>
+<p>	
+
+As same as GetPlayer(7798)
+
+</p>
+</details>
 
 #### GetPlayerStats
 ```golang
@@ -602,8 +609,6 @@ h.GetPlayerStats(7998, hltv.PlayerStatsQuery{
 		RankFilter: enum.RankingFilterTop20,
 })
 ```
-<details><summary>Output</summary>
-<p>	
 	
 ```json
 {
