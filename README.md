@@ -269,13 +269,14 @@ func main() {
 
 ## API
 * Player
-	* [GetPlayer](#getplayerid-int-player-modelfullplayer-err-error)
-	* [GetPlayerByName](#getplayerbynamename-string-player-modelfullplayer-err-error)
-	* [GetPlayerStats](#getplayerstatsid-int-q-playerstatsquery-playerstats-modelfullplayerstats-err-error)
+	* [GetPlayer](#getplayer)
+	* [GetPlayerByName](#getplayerbynamename)
+	* [GetPlayerStats](#getplayerstats)
 	    
 
-#### GetPlayer(id int) (player *model.FullPlayer, err error)
+#### GetPlayer
 ```golang
+//GetPlayer(id int) (player *model.FullPlayer, err error)
 h.GetPlayer(7798)
 ```
 
@@ -584,14 +585,16 @@ h.GetPlayer(7798)
 </p>
 </details>
 
-#### GetPlayerByName(name string) (player *model.FullPlayer, err error)
+#### GetPlayerByName
 
 ```golang
+//GetPlayerByName(name string) (player *model.FullPlayer, err error)
 h.GetPlayerByName("s1mple")
 ```
 
-#### GetPlayerStats(id int, q PlayerStatsQuery) (playerStats *model.FullPlayerStats, err error)
+#### GetPlayerStats
 ```golang
+//GetPlayerStats(id int, q PlayerStatsQuery) (playerStats *model.FullPlayerStats, err error)
 h.GetPlayerStats(7998, hltv.PlayerStatsQuery{
 		StartDate:  "2019-01-01", //YYYY-MM-DD
 		EndDate:    "2019-12-31",
