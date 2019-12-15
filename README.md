@@ -609,6 +609,9 @@ h.GetPlayerStats(7998, hltv.PlayerStatsQuery{
 		RankFilter: enum.RankingFilterTop20,
 })
 ```
+
+<details><summary>Output</summary>
+<p>	
 	
 ```json
 {
