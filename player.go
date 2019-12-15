@@ -4,6 +4,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/google/go-querystring/query"
 	"github.com/tidwall/gjson"
+	"hltv/enum"
 	"hltv/model"
 	"hltv/utils"
 	"io/ioutil"
@@ -136,8 +137,8 @@ func (h *HLTV) GetPlayerByName(name string) (player *model.FullPlayer, err error
 type PlayerStatsQuery struct {
 	StartDate  string //YYYY-MM-DD
 	EndDate    string
-	MatchType  MatchType
-	RankFilter RankingFilter
+	MatchType  enum.MatchType
+	RankFilter enum.RankingFilter
 }
 
 func (h *HLTV) GetPlayerStats(id int, q PlayerStatsQuery) (playerStats *model.FullPlayerStats, err error) {

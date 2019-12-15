@@ -1,4 +1,4 @@
-package hltv
+package enum
 
 type MapSlug string
 
