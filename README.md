@@ -274,7 +274,7 @@ func main() {
 h.GetPlayer(7798)
 ```
 
-<details><summary>Example Output</summary>
+<details><summary>Output</summary>
 <p>
 	
 ```json
