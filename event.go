@@ -25,11 +25,13 @@ func (h *HLTV) GetEvent(id int) (fullEvent *model.FullEvent, err error) {
 	/* get basic information */
 	name := doc.Find(".eventname").Text()
 	dateStartUnix, _ := doc.Find("td.eventdate span[data-unix]").First().Attr("data-unix")
-	dateStartInt64, _ := strconv.ParseInt(dateStartUnix, 10, 64)
-	dateStart := time.Unix(dateStartInt64, 0)
+	//dateStartInt64, _ := strconv.ParseInt(dateStartUnix, 10, 64)
+	//	//dateStart := time.Unix(dateStartInt64, 0)
+	dateStart := utils.UnixTimeStringToTime(dateStartUnix)
 	dateEndUnix, _ := doc.Find("td.eventdate span[data-unix]").Last().Attr("data-unix")
-	dateEndInt64, _ := strconv.ParseInt(dateEndUnix, 10, 64)
-	dateEnd := time.Unix(dateEndInt64, 0)
+	//dateEndInt64, _ := strconv.ParseInt(dateEndUnix, 10, 64)
+	//	//dateEnd := time.Unix(dateEndInt64, 0)
+	dateEnd := utils.UnixTimeStringToTime(dateEndUnix)
 	prizePool := doc.Find("td.prizepool").Text()
 
 	/* get location */
@@ -145,7 +147,7 @@ func (h *HLTV) GetEvent(id int) (fullEvent *model.FullEvent, err error) {
    Use enum.EventSizeAny to represent any event size and
    use time.Month(0) to represent any month
 */
-func (h *HLTV) GetEvents(size enum.EventSize, month time.Month) (events []model.EventResults, err error) {
+func (h *HLTV) GetFutureEvents(size enum.EventSize, month time.Month) (events []model.EventResults, err error) {
 	res, err := utils.GetQuery(h.Url + "/events/")
 	defer res.Body.Close()
 	if err != nil {
@@ -161,6 +163,10 @@ func (h *HLTV) GetEvents(size enum.EventSize, month time.Month) (events []model.
 	doc.Find(".events-month").Each(func(i int, eventsEachMonth *goquery.Selection) {
 		currMonthString := eventsEachMonth.Find(".standard-headline").Text()
 		currTime, _ := time.Parse(timeLayout, currMonthString)
+		currEvents := model.EventResults{
+			Month:  currTime.Month(),
+			Events: []model.SimpleEvent{},
+		}
 
 		/* decide which event type should be added to events
 		   month == 0 means search event at any month */
@@ -168,19 +174,20 @@ func (h *HLTV) GetEvents(size enum.EventSize, month time.Month) (events []model.
 			// TODO better error handling for parseEvent
 			if size == enum.EventSizeAny || size == enum.EventSizeBig {
 				parsedEvents, _ := parseEvent(eventsEachMonth.Find("a.big-event"), currTime.Month(), enum.EventSizeBig)
-				events = append(events, parsedEvents)
+				currEvents.Events = append(currEvents.Events, parsedEvents...)
 			}
 			if size == enum.EventSizeAny || size == enum.EventSizeSmall {
 				parsedEvents, _ := parseEvent(eventsEachMonth.Find("a.small-event"), currTime.Month(), enum.EventSizeSmall)
-				events = append(events, parsedEvents)
+				currEvents.Events = append(currEvents.Events, parsedEvents...)
 			}
 		}
+		events = append(events, currEvents)
 	})
 
 	return events, nil
 }
 
-func parseEvent(eventSelection *goquery.Selection, month time.Month, eventSize enum.EventSize) (result model.EventResults, err error) {
+func parseEvent(eventSelection *goquery.Selection, month time.Month, eventSize enum.EventSize) (events []model.SimpleEvent, err error) {
 	/* initialize goquery selector */
 	var dateSelector string = ""
 	var nameSelector string = ""
@@ -193,12 +200,11 @@ func parseEvent(eventSelection *goquery.Selection, month time.Month, eventSize e
 	} else {
 		/* selector for Big Event */
 		//dateSelector = "span[data-unix]"
-		dateSelector = ".additional-info .col-date"
+		dateSelector = ".additional-info .col-value span[data-unix]"
 		nameSelector = ".big-event-name"
 		locationSelector = ".location-top-teams img"
 	}
 
-	var events []model.SimpleEvent
 	eventSelection.Each(func(i int, selection *goquery.Selection) {
 		/* basic information */
 		idS, _ := selection.Attr("href")
@@ -210,20 +216,17 @@ func parseEvent(eventSelection *goquery.Selection, month time.Month, eventSize e
 		countryCodeS := strings.Split(utils.PopSlashSource(selection.Find(locationSelector)), ".")[0]
 
 		/* Date */
-		//TODO fix date, it is totally broken
 		dateStartUnix, _ := selection.Find(dateSelector).Eq(0).Attr("data-unix")
-		dateStartInt64, _ := strconv.ParseInt(dateStartUnix, 10, 64)
-		dateStart := time.Unix(dateStartInt64, 0)
+		dateStart := utils.UnixTimeStringToTime(dateStartUnix)
 
 		dateEndUnix, _ := selection.Find(dateSelector).Eq(1).Attr("data-unix")
-		dateEndInt64, _ := strconv.ParseInt(dateEndUnix, 10, 64)
-		dateEnd := time.Unix(dateEndInt64, 0)
+		dateEnd := utils.UnixTimeStringToTime(dateEndUnix)
 
 		/* Get teams and prizepool */
 		var numberOfTeam int // number of teams
 		var prizePool string
 
-		if (eventSize == enum.EventSizeSmall) {
+		if eventSize == enum.EventSizeSmall {
 			numberOfTeam, _ = strconv.Atoi(selection.Find(".col-value").Eq(1).Text())
 			prizePool = selection.Find(".prizePoolEllipsis").Text()
 		} else {
@@ -231,7 +234,27 @@ func parseEvent(eventSelection *goquery.Selection, month time.Month, eventSize e
 			prizePool = selection.Find(".additional-info tr").Eq(0).Find("td").Eq(1).Text()
 		}
 
-		//eventType := selection.Find("table tr").Eq(0).Find("td").Eq(3).Text()
+		/* get event type */
+		eventTypeString := selection.Find("table tr").Eq(0).Find("td").Eq(3).Text()
+		var eventType enum.EventType
+		if eventSize == enum.EventSizeBig {
+			eventType = enum.EventTypeIntlLan
+		} else {
+			switch eventTypeString {
+			case "Online":
+				eventType = enum.EventTypeOnline
+			case "Local LAN":
+				eventType = enum.EventTypeLocalLan
+			case "Reg. LAN":
+				eventType = enum.EventTypeRegLan
+			case "Intl. LAN":
+				eventType = enum.EventTypeIntlLan
+			case "Major":
+				eventType = enum.EventTypeMajor
+			default:
+				eventType = enum.EventTypeOther
+			}
+		}
 		// TODO fix type to EventType
 
 		currEvent := model.SimpleEvent{
@@ -241,17 +264,14 @@ func parseEvent(eventSelection *goquery.Selection, month time.Month, eventSize e
 			DateEnd:       &dateEnd,
 			PrizePool:     prizePool,
 			NumberOfTeams: &numberOfTeam,
-			Location:      model.Country{
+			Location: model.Country{
 				Name: countryName,
 				Code: countryCodeS,
 			},
-			Type:          enum.EventTypeMajor, //TODO temp
+			Type: eventType,
 		}
 		events = append(events, currEvent)
 	})
 
-	return model.EventResults{
-		Month:  month,
-		Events: events,
-	}, nil
+	return events, nil
 }

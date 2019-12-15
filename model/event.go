@@ -25,7 +25,7 @@ type FullEvent struct {
 }
 
 type EventResults struct {
-	Month time.Month
+	Month  time.Month
 	Events []SimpleEvent
 }
 type SimpleEvent struct {
