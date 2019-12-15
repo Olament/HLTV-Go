@@ -1,7 +1,7 @@
 package model
 
 import (
-	"hltv/enum"
+	"github.com/Olament/HLTV-Go/enum"
 	"time"
 )
 

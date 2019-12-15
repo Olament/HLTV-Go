@@ -2,9 +2,9 @@ package hltv
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"hltv/enum"
-	"hltv/model"
-	"hltv/utils"
+	"github.com/Olament/HLTV-Go/enum"
+	"github.com/Olament/HLTV-Go/model"
+	"github.com/Olament/HLTV-Go/utils"
 	"strconv"
 	"strings"
 	"time"
