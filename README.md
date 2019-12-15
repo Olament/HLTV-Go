@@ -268,6 +268,11 @@ func main() {
 </details>
 
 ## API
+* Player
+	* [GetPlayer](#getplayerid-int-player-modelfullplayer-err-error)
+	* [GetPlayerByName](#getplayerbynamename-string-player-modelfullplayer-err-error)
+	* [GetPlayerStats](#getplayerstatsid-int-q-playerstatsquery-playerstats-modelfullplayerstats-err-error)
+	    
 
 #### GetPlayer(id int) (player *model.FullPlayer, err error)
 ```golang
