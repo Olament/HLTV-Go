@@ -1,18 +1,20 @@
 package model
 
-import "hltv/enum"
+import (
+	"hltv/enum"
+	"time"
+)
 
 type Event struct {
 	Name string
 	ID   *int
 }
 
-// TODO convert date to actual Date struct instead of string
 type FullEvent struct {
 	ID                int
 	Name              string
-	DateStart         string
-	DateEnd           string
+	DateStart         time.Time
+	DateEnd           time.Time
 	PrizePool         string
 	Teams             []EventTeam
 	Location          Country
@@ -20,6 +22,21 @@ type FullEvent struct {
 	Formats           []EventFormat
 	RelatedEvents     []Event
 	MapPool           []enum.MapSlug
+}
+
+type EventResults struct {
+	Month time.Month
+	Events []SimpleEvent
+}
+type SimpleEvent struct {
+	ID            int
+	Name          string
+	DateStart     *time.Time
+	DateEnd       *time.Time
+	PrizePool     string
+	NumberOfTeams *int
+	Location      Country
+	Type          enum.EventType
 }
 
 type EventFormat struct {
