@@ -11,7 +11,7 @@ func TestUpcomingMatches(t *testing.T) {
 		StaticURL: "",
 	}
 
-	matches, err := h.GetUpcomingMatches(nil)
+	matches, err := h.GetUpcomingMatches(UpcomingMatchesQuery{})
 	if err != nil {
 		t.Errorf("GetUpcomingMatches returned an error %v", err)
 		return

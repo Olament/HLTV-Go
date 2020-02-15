@@ -1,27 +1,24 @@
 package hltv
 
 import (
-	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/google/go-querystring/query"
 
 	"github.com/Olament/HLTV-Go/model"
 	"github.com/Olament/HLTV-Go/utils"
 )
 
-func (h *HLTV) GetUpcomingMatches(teamIDs []int) (upcomingMatches []*model.UpcomingMatch, err error) {
+type UpcomingMatchesQuery struct {
+	Team []int
+}
+
+func (h *HLTV) GetUpcomingMatches(q UpcomingMatchesQuery) (upcomingMatches []*model.UpcomingMatch, err error) {
 	// Build query string parameters
-	queryString := ""
-	if len(teamIDs) > 0 {
-		q := url.Values{}
-		for _, teamID := range teamIDs {
-			q.Add("team", strconv.Itoa(teamID))
-		}
-		queryString = q.Encode()
-	}
-	res, err := utils.GetQuery(h.Url + "/matches/?" + queryString)
+	queryString, _ := query.Values(q)
+	res, err := utils.GetQuery(h.Url + "/matches/?" + queryString.Encode())
 	defer res.Body.Close()
 	if err != nil {
 		return nil, err

@@ -658,9 +658,11 @@ h.GetPlayerStats(7998, hltv.PlayerStatsQuery{
 #### GetUpcomingMatches
 
 ```golang
-//GetUpcomingMatches(teamIDs []int) (upcomingMatches []*model.UpcomingMatch, err error)
-h.GetUpcomingMatches(nil)  // All matches
-h.GetUpcomingMatches([]int{7532,8637})  // Filtered by team IDs
+//GetUpcomingMatches(UpcomingMatchesQuery{}) (upcomingMatches []*model.UpcomingMatch, err error)
+h.GetUpcomingMatches(UpcomingMatchesQuery{})  // All matches
+h.GetUpcomingMatches(UpcomingMatchesQuery{  // Filtered by team IDs
+  		Team: []int{7532,8637},
+})
 ```
 <details><summary>Output</summary>
 <p>	
