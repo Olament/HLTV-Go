@@ -275,6 +275,7 @@ func main() {
 	* [GetPlayer](#getplayer)
 	* [GetPlayerByName](#getplayerbynamename)
 	* [GetPlayerStats](#getplayerstats)
+	* [GetUpcomingMatches](#getupcomingmatches)
 	    
 
 #### GetPlayer
@@ -651,5 +652,40 @@ h.GetPlayerStats(7998, hltv.PlayerStatsQuery{
 }
 ```
 
+</p>
+</details>
+
+#### GetUpcomingMatches
+
+```golang
+//GetUpcomingMatches(UpcomingMatchesQuery{}) (upcomingMatches []*model.UpcomingMatch, err error)
+h.GetUpcomingMatches(UpcomingMatchesQuery{})  // All matches
+h.GetUpcomingMatches(UpcomingMatchesQuery{  // Filtered by team IDs
+  		Team: []int{7532,8637},
+})
+```
+<details><summary>Output</summary>
+<p>	
+
+```json
+[
+    {
+        "ID": 2339374,
+        "Team1": {
+            "Name": "Astralis",
+            "ID": 6665
+        },
+        "Team2": {
+            "Name": "Cloud9",
+            "ID": 5752
+        },
+        "Date": "2020-02-24T12:00:00+01:00",
+        "Event": {
+            "Name": "IEM Katowice 2020",
+            "ID": 4901
+        }
+    }
+]
+```
 </p>
 </details>
