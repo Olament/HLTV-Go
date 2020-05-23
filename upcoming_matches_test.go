@@ -1,6 +1,7 @@
 package hltv
 
 import (
+	"regexp"
 	"testing"
 	"time"
 )
@@ -39,5 +40,12 @@ func TestUpcomingMatches(t *testing.T) {
 	}
 	if *m.Event.ID == 0 {
 		t.Errorf("Events have no ID")
+	}
+	if m.Format == "" {
+		t.Errorf("Match format is not defined")
+	}
+	formatMatched, _ := regexp.MatchString(`^bo\d{1}$`, m.Format)
+	if !formatMatched {
+		t.Errorf("Unexpected match format string")
 	}
 }
