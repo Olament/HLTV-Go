@@ -44,6 +44,8 @@ func (h *HLTV) GetUpcomingMatches(q UpcomingMatchesQuery) (upcomingMatches []*mo
 		team2Name := selection.Find("div.team").Last().Text()
 		team2ID, _ := strconv.Atoi(utils.PopSlashSource(selection.Find("img.logo").Last()))
 
+		format := selection.Find("div.map-text").Last().Text()
+
 		match := &model.UpcomingMatch{
 			ID: &matchID,
 			Team1: model.Team{
@@ -59,6 +61,7 @@ func (h *HLTV) GetUpcomingMatches(q UpcomingMatchesQuery) (upcomingMatches []*mo
 				Name: eventName,
 				ID:   &eventID,
 			},
+			Format: format,
 		}
 		upcomingMatches = append(upcomingMatches, match)
 	})
