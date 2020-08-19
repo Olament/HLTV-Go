@@ -29,22 +29,25 @@ func (h *HLTV) GetUpcomingMatches(q UpcomingMatchesQuery) (upcomingMatches []*mo
 		return nil, err
 	}
 
-	doc.Find(".upcoming-match").Each(func(i int, selection *goquery.Selection) {
-		matchHref, _ := selection.Find(".a-reset").First().Attr("href")
+	doc.Find(".upcomingMatch").Each(func(i int, selection *goquery.Selection) {
+		matchHref, _ := selection.Find("a.match").First().Attr("href")
 		matchID, _ := strconv.Atoi(strings.Split(matchHref, "/")[2])
-		matchTimestamp, _ := selection.Find("div.time").First().Attr("data-unix")
+		matchTimestamp, _ := selection.Find(".matchTime").First().Attr("data-unix")
 		date := utils.UnixTimeStringToTime(matchTimestamp)
 
-		eventName, _ := selection.Find(".event-logo").Attr("alt")
-		eventID, _ := strconv.Atoi(strings.Split(utils.PopSlashSource(selection.Find("img.event-logo")), ".")[0])
+		eventName := selection.Find(".matchEventName").First().Text()
+		eventID, _ := strconv.Atoi(
+			strings.Split(utils.PopSlashSource(selection.Find("img.matchEventLogo")), ".")[0])
 
-		team1Name := selection.Find("div.team").First().Text()
-		team1ID, _ := strconv.Atoi(utils.PopSlashSource(selection.Find("img.logo").First()))
+		team1Name := selection.Find(".team1 .matchTeamName").First().Text()
+		team1IDStr, _ := selection.Attr("team1")
+		team1ID, _ := strconv.Atoi(team1IDStr)
 
-		team2Name := selection.Find("div.team").Last().Text()
-		team2ID, _ := strconv.Atoi(utils.PopSlashSource(selection.Find("img.logo").Last()))
+		team2Name := selection.Find(".team2 .matchTeamName").Last().Text()
+		team2IDStr, _ := selection.Attr("team2")
+		team2ID, _ := strconv.Atoi(team2IDStr)
 
-		format := selection.Find("div.map-text").Last().Text()
+		format := selection.Find(".matchMeta").Last().Text()
 
 		match := &model.UpcomingMatch{
 			ID: &matchID,
